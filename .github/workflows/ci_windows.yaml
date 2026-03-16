@@ -37,8 +37,9 @@ jobs:
         - os: windows-latest
           arch: arm64
           qt_arch: win64_msvc2022_arm64
+          qt_host: windows_arm64
           msvc_arch: amd64_arm64
-          qt_archives: ""
+          qt_archives: qtbase qtsvg qttools
           qt_modules: ""
 
     env:
@@ -141,6 +142,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
+          host: ${{ matrix.config.qt_host }}
           version: "6.10.1"
           arch: ${{ matrix.config.qt_arch }}
           archives: ${{ matrix.config.qt_archives }}

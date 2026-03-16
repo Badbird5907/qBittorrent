@@ -84,9 +84,25 @@ jobs:
               "set(VCPKG_LIBRARY_LINKAGE static)",
               "set(VCPKG_CRT_LINKAGE dynamic)",
               "set(VCPKG_BUILD_TYPE release)")
+          # For cross-compilation (arm64 target on x64 host), also create the x64 host triplet
+          # so we can install the host-native boost-build tools (b2.exe must run on x64)
+          if ("${{ matrix.config.arch }}" -ne "x64") {
+            New-Item `
+              -Force `
+              -ItemType File `
+              -Path "${{ env.vcpkg_path }}/triplets_overlay/x64-windows-static-md-release.cmake"
+            Add-Content `
+              -Path "${{ env.vcpkg_path }}/triplets_overlay/x64-windows-static-md-release.cmake" `
+              -Value @("set(VCPKG_TARGET_ARCHITECTURE x64)",
+                "set(VCPKG_LIBRARY_LINKAGE static)",
+                "set(VCPKG_CRT_LINKAGE dynamic)",
+                "set(VCPKG_BUILD_TYPE release)")
+          }
           # clear buildtrees after each package installation to reduce disk space requirements
+          # boost-build must always use the x64 (host) triplet - the b2.exe build tool must run
+          # on the CI runner (x64), even when cross-compiling for arm64
           $packages = `
-            "boost-build:${{ matrix.config.arch }}-windows-static-md-release",
+            "boost-build:x64-windows-static-md-release",
             "openssl:${{ matrix.config.arch }}-windows-static-md-release",
             "zlib:${{ matrix.config.arch }}-windows-static-md-release"
           ${{ env.vcpkg_path }}/vcpkg.exe upgrade `
@@ -111,8 +127,8 @@ jobs:
           }
           move "${{ github.workspace }}/../boost_*" "${{ env.boost_path }}"
           cd "${{ env.boost_path }}"
-          #.\bootstrap.bat
-          ${{ env.vcpkg_path }}/installed/${{ matrix.config.arch }}-windows-static-md-release/tools/boost-build/b2.exe `
+          # Always use the x64 (host) b2.exe - it can stage headers for any target architecture
+          ${{ env.vcpkg_path }}/installed/x64-windows-static-md-release/tools/boost-build/b2.exe `
             stage `
             toolset=msvc `
             --stagedir=.\ `

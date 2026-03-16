@@ -1,6 +1,6 @@
 name: CI - Windows
 
-on: [pull_request, push]
+on: [pull_request, push, workflow_dispatch]
 
 permissions: {}
 
@@ -31,6 +31,11 @@ jobs:
         - os: windows-latest
           arch: x64
           qt_arch: win64_msvc2022_64
+          msvc_arch: x64
+        - os: windows-latest
+          arch: arm64
+          qt_arch: win64_msvc2022_arm64
+          msvc_arch: amd64_arm64
 
     env:
       boost_path: "${{ github.workspace }}/../boost"
@@ -46,7 +51,7 @@ jobs:
       - name: Setup devcmd
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{ matrix.config.arch }}
+          arch: ${{ matrix.config.msvc_arch }}
 
       - name: Install build tools
         run: |
@@ -167,7 +172,10 @@ jobs:
             --graphviz=build/target_graph.dot
           cmake --build build --target qbt_update_translations
           cmake --build build
-          cmake --build build --target check
+
+      - name: Run tests
+        if: matrix.config.arch != 'arm64'
+        run: cmake --build build --target check
 
       - name: Prepare build artifacts
         run: |

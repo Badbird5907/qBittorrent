@@ -37,7 +37,6 @@ jobs:
         - os: windows-latest
           arch: arm64
           qt_arch: win64_msvc2022_arm64
-          qt_host: windows_arm64
           msvc_arch: amd64_arm64
           qt_archives: qtbase qtsvg qttools
           qt_modules: ""

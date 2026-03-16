@@ -178,6 +178,13 @@ jobs:
       - name: Build qBittorrent
         run: |
           $env:CXXFLAGS+="/DQT_FORCE_ASSERTS /WX"
+          $cmake_extra_args = @()
+          if ("${{ matrix.config.arch }}" -eq "arm64") {
+            # For cross-compilation, point CMake to the x64 host Qt tools (moc, rcc, uic)
+            # since ARM64 binaries cannot execute on the x64 CI host
+            $qt_host_path = Join-Path (Split-Path "${{ env.Qt_ROOT_DIR }}") "msvc2022_64"
+            $cmake_extra_args += "-DQT_HOST_PATH=$qt_host_path"
+          }
           cmake `
             -B build `
             -G "Ninja" `
@@ -190,7 +197,8 @@ jobs:
             -DTESTING=ON `
             -DVCPKG_TARGET_TRIPLET=${{ matrix.config.arch }}-windows-static-md-release `
             -DVERBOSE_CONFIGURE=ON `
-            --graphviz=build/target_graph.dot
+            --graphviz=build/target_graph.dot `
+            @cmake_extra_args
           cmake --build build --target qbt_update_translations
           cmake --build build
 
